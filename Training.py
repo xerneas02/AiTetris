@@ -12,6 +12,8 @@ import time
 from Constante import *
 import os
 
+with open("rewards.log", "w") as f:
+    f.write("")
 
 model_name = "Model/model.keras"
 rom_path = "Rom/Tetris.gb"
@@ -39,7 +41,7 @@ else:
 
 model.summary()
 
-agent = DQNAgent(model, list(range(num_actions)), batch_size=128, epochs=1, verbose=1)
+agent = DQNAgent(model, list(range(num_actions)), batch_size=512, epochs=1, verbose=0)
 
 episodes = 1000000000000000000000
 frames_per_action = 4
@@ -51,14 +53,11 @@ for episode in range(episodes):
     with open("State/startstate.state", "rb") as f:
         pyboy.load_state(f)
     
-    reset_reward()
-
     current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
     previous_grid = current_grid  # Initialize previous grid as the current grid initially
 
     total_frames = 0
     done = False
-    total_reward = 0
     
     while not done:
         random_pieces(pyboy)
@@ -77,22 +76,25 @@ for episode in range(episodes):
         pyboy.button(action)
         pyboy.tick()
         
-        reward, done = get_game_reward(pyboy)
-        total_reward += reward
+        reward = get_game_reward(pyboy)
+        done = is_done(pyboy)
         
         next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
         next_state = np.stack([current_grid, next_grid], axis=-1)
         
-            
+        if total_frames % frames_per_action == 0:
+            agent.store_experience(state, action_index, reward, next_state, done)
 
         previous_grid = current_grid
         total_frames += 1
-        count += 1
-
-    if count % 2048 == 0:
-        model.save(model_name)
+        count += 1 
         
-    agent.store_experience(state, action_index, reward, next_state, done)
     train_time = agent.train()
+    model.save(model_name)
+
+    reward = get_game_reward(pyboy)
+
+    with open("rewards.log", "a") as f:
+        f.write(f"{reward}\n")
     
-    print(f"Episode {episode}, Total Reward: {total_reward}")
+    print(f"Episode {episode}, Score: {reward}")

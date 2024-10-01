@@ -4,7 +4,6 @@ import time
 from collections import defaultdict  # Import defaultdict for action tracking
 from Constante import action_space as action_table
 import gc
-import tensorflow as tf
 
 
 class DQNAgent:
@@ -39,7 +38,7 @@ class DQNAgent:
 
     def store_experience(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > 512:
+        if len(self.memory) > 10000:
             self.memory.pop(0)
 
     def optimized_train_step(self, states, q_values):
