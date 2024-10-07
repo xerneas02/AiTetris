@@ -1,103 +1,109 @@
-import pyboy.api
-import pyboy.utils
-from CNN import *
-from DQNAgent import *
-from GameFrame import *
-
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import load_model
-from pyboy import PyBoy
-from Rewards import *
-import time
-from Constante import *
 import os
+import time
+import numpy as np
+from pyboy import PyBoy
+from tensorflow.keras.models import load_model
 
+
+from CNN import create_cnn
+from DQNAgent import DQNAgent
+from AccessMemory import get_grid_from_raw_screen, random_pieces
+from Rewards import get_game_reward, is_done
+from Constante import action_space, num_actions
+
+
+# Constants
+MODEL_NAME = "Model/model.h5"
+ROM_PATH = "Rom/Tetris.gb"
+SHOW_DISPLAY = True
+INPUT_SHAPE_GRID = (2, 18, 10)
+FRAMES_PER_ACTION = 4
+EPISODES = 1_000_000_000_000_000_000_000
+BATCH_SIZE = 32
+EPOCHS = 3
+
+# Clear the rewards log file
 with open("rewards.log", "w") as f:
     f.write("")
 
-model_name = "Model/model.keras"
-rom_path = "Rom/Tetris.gb"
-show_display = True
-
-# Start PyBoy
-pyboy = PyBoy(rom_path)
-
-
-if not show_display:
-    pyboy = PyBoy(rom_path, window_type="null")
-
+# Initialize PyBoy (GameBoy emulator)
+pyboy = PyBoy(ROM_PATH, window_type=None if not SHOW_DISPLAY else "SDL2")
 pyboy.set_emulation_speed(1_000_000)
 
-# Define the input shape based on the grid (18, 10, 2)
-input_shape_grid = (18, 10, 2)
-num_actions = len(action_space)
-
-if os.path.exists(model_name):
-    model = load_model(model_name)
-    print('Model loaded successfully')
+# Load or create model
+if os.path.exists(MODEL_NAME):
+    model = load_model(MODEL_NAME)
+    print('Model loaded successfully.')
 else:
-    model = create_cnn(input_shape_grid, num_actions)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
-    print('Model created successfully')
+    model = create_cnn(INPUT_SHAPE_GRID, num_actions)
+    print('Model created successfully.')
 
 model.summary()
 
-agent = DQNAgent(model, list(range(num_actions)), batch_size=512, epochs=1, verbose=0)
+# Initialize the DQN agent
+agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=0)
 
-episodes = 1_000_000_000_000_000_000_000
-frames_per_action = 4
-original_time = -1
-train_time = 0
-count = 0
-
-for episode in range(episodes):
+# Main training loop
+for episode in range(EPISODES):
+    # Load the game state
     with open("State/startstate.state", "rb") as f:
         pyboy.load_state(f)
-    
-    current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
-    previous_grid = current_grid  # Initialize previous grid as the current grid initially
 
-    total_frames = 0
+    # Initialize grids
+    current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
+    previous_grid = current_grid  # Set previous grid initially to current grid
+
     done = False
-    
+    total_frames = 0
+
     while not done:
         random_pieces(pyboy)
+
+        # Update current grid
         current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
 
-        # Stack the current grid and previous grid together as input
-        state = np.stack([previous_grid, current_grid], axis=-1)
-        
+        # Stack grids to form the state
+        state = np.stack([previous_grid, current_grid])
 
+        # Agent chooses an action
         action_index = agent.act(state)
-        action = action_space[action_index]
+        try:
+            action = action_space[action_index]
+        except Exception as e:
+            print(f"Invalid action index: {action_index}")
+            print(action_space)
+            print(f"Error: {e}")
+            exit(1)
 
-        pyboy.button(action, frames_per_action-1)
-        print(action)
-        for i in range(frames_per_action):
-            
+        # Execute the action for a few frames
+        for _ in range(FRAMES_PER_ACTION):
+            pyboy.button(action)
             pyboy.tick()
-        
+
+        # Calculate reward and check if the game is over
         reward = get_game_reward(pyboy)
         done = is_done(pyboy)
-        
-        next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
-        next_state = np.stack([current_grid, next_grid], axis=-1)
 
+        # Prepare next state and store experience in agent's memory
+        next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
+        next_state = np.stack([current_grid, next_grid])
         agent.store_experience(state, action_index, reward, next_state, done)
 
+        # Update previous grid for the next step
         previous_grid = current_grid
         total_frames += 1
-        count += 1 
-        
-    train_time = agent.train()
+
+    # Train the agent after each episode
+    agent.train()
+
+    # Save the model periodically
     try:
-        model.save(model_name)
-    except:
-        print("Error Couldn't Save!")
+        agent.save(MODEL_NAME)
+    except Exception as e:
+        print(f"Error: Couldn't save the model. Reason: {e}")
 
-    reward = get_game_reward(pyboy)
-
+    # Log the reward for the episode
     with open("rewards.log", "a") as f:
         f.write(f"{reward}\n")
-    
+
     print(f"Episode {episode}, Score: {reward}")

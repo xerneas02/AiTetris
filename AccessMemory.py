@@ -55,7 +55,6 @@ def get_grid_from_raw_screen(screen_array, pyboy):
         y += size    # Move to the next block vertically
     
     x, y = get_pos(pyboy)
-    print(y)
     
     tab[y][x] = 2
     rot = pyboy.memory[ROTATION]

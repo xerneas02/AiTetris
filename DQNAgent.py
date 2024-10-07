@@ -13,8 +13,8 @@ class DQNAgent:
         self.memory = []
         self.gamma = 0.98  # Discount factor
         self.epsilon = 1.0  # Exploration rate
-        self.epsilon_decay = 0.995
-        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.95
+        self.epsilon_min = 0.0
         self.learning_rate = 0.001
         self.batch_size = batch_size
         self.epochs = epochs
@@ -25,11 +25,12 @@ class DQNAgent:
     
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-            action = random.choice(self.action_space)  # Explore
+            action = random.randint(0, self.action_space-1)  # Explore
         else:
             # Predict Q-values based on the grid (current + previous)
             q_values = self.model.predict(np.array([state]), verbose=0)
             action = np.argmax(q_values[0])
+
         
         # Increment the count of the chosen action
         self.action_count[action] += 1
@@ -98,3 +99,6 @@ class DQNAgent:
             print("------------------------------------------")
             
         return elapsed_time
+    
+    def save(self, model_name):
+        self.model.save(model_name)
