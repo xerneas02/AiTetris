@@ -54,7 +54,7 @@ for episode in range(episodes):
     with open("State/startstate.state", "rb") as f:
         pyboy.load_state(f)
     
-    current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
+    current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
     previous_grid = current_grid  # Initialize previous grid as the current grid initially
 
     total_frames = 0
@@ -62,7 +62,7 @@ for episode in range(episodes):
     
     while not done:
         random_pieces(pyboy)
-        current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
+        current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
 
         # Stack the current grid and previous grid together as input
         state = np.stack([previous_grid, current_grid], axis=-1)
@@ -80,7 +80,7 @@ for episode in range(episodes):
         reward = get_game_reward(pyboy)
         done = is_done(pyboy)
         
-        next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
+        next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
         next_state = np.stack([current_grid, next_grid], axis=-1)
 
         agent.store_experience(state, action_index, reward, next_state, done)
