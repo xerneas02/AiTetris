@@ -32,6 +32,8 @@ def print_grid(grid):
                 print(".", end="")
             if grid[i][j] == 1:
                 print("#", end="")
+            if grid[i][j] == 2:
+                print("@", end="")
         print()
 
 # PyBoy ROM and settings
@@ -78,7 +80,7 @@ def save_preprocessed_screen(pyboy, Ncouleur, filename):
     # Get the raw screen from PyBoy (original screen)
     raw_screen = pyboy.screen.ndarray
 
-    # Debug: print the shape and dtype of the preprocessed screen
+
     print(f"Shape of preprocessed screen: {preprocessed_screen.shape}")
     print(f"Data type of preprocessed screen: {preprocessed_screen.dtype}")
 
@@ -152,12 +154,12 @@ def play_manually():
     total_frames = 0
     done = False
     while not done:
-        grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
-        
-        #print_grid(grid)
+        grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
+
         #clear_console()
-        
-        
+        #print_grid(grid)
+        print(pyboy.memory[ROTATION])
+
         if show_display:
             time.sleep(0.016667)  # 60 FPS
 

@@ -17,3 +17,7 @@ STATIC_BLOCKS_START_ADDRESS = 0xC800  # Adresse des blocs statiques
 NEXT_TETROMINO_ADDRESS = 0xC213     # Adresse du tetromino actif
 ACTIVE_TETROMINO_X = 0xC200           # Position X du tetromino actif
 ACTIVE_TETROMINO_Y = 0xC201           # Position Y du tetromino actif
+ROTATION = 0xC203
+
+Y = 0xFFB2
+X = 0xFFB3

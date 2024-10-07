@@ -17,15 +17,16 @@ with open("rewards.log", "w") as f:
 
 model_name = "Model/model.keras"
 rom_path = "Rom/Tetris.gb"
-show_display = False
+show_display = True
 
 # Start PyBoy
 pyboy = PyBoy(rom_path)
-if show_display:
-    pyboy.set_emulation_speed(0)
-else:
-    #pyboy = PyBoy(rom_path, window_type="headless")
-    pyboy.set_emulation_speed(1_000_000)
+
+
+if not show_display:
+    pyboy = PyBoy(rom_path, window_type="null")
+
+pyboy.set_emulation_speed(1_000_000)
 
 # Define the input shape based on the grid (18, 10, 2)
 input_shape_grid = (18, 10, 2)
@@ -43,7 +44,7 @@ model.summary()
 
 agent = DQNAgent(model, list(range(num_actions)), batch_size=512, epochs=1, verbose=0)
 
-episodes = 1000000000000000000000
+episodes = 1_000_000_000_000_000_000_000
 frames_per_action = 4
 original_time = -1
 train_time = 0
@@ -66,31 +67,33 @@ for episode in range(episodes):
         # Stack the current grid and previous grid together as input
         state = np.stack([previous_grid, current_grid], axis=-1)
         
-        if show_display:
-            time.sleep(0.016667)
-        
-        if total_frames % frames_per_action == 0:
-            action_index = agent.act(state)
-            action = action_space[action_index]
-        
-        pyboy.button(action)
-        pyboy.tick()
+
+        action_index = agent.act(state)
+        action = action_space[action_index]
+
+        pyboy.button(action, frames_per_action-1)
+        print(action)
+        for i in range(frames_per_action):
+            
+            pyboy.tick()
         
         reward = get_game_reward(pyboy)
         done = is_done(pyboy)
         
         next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray)
         next_state = np.stack([current_grid, next_grid], axis=-1)
-        
-        if total_frames % frames_per_action == 0:
-            agent.store_experience(state, action_index, reward, next_state, done)
+
+        agent.store_experience(state, action_index, reward, next_state, done)
 
         previous_grid = current_grid
         total_frames += 1
         count += 1 
         
     train_time = agent.train()
-    model.save(model_name)
+    try:
+        model.save(model_name)
+    except:
+        print("Error Couldn't Save!")
 
     reward = get_game_reward(pyboy)
 

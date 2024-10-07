@@ -35,16 +35,7 @@ def get_pixel_color_from_raw_screen(screen_array, x, y):
     # Return the pixel value at the given coordinates
     return tuple(screen_array[y, x])  # Access as (y, x) since NumPy uses row-major order
 
-def get_grid_from_raw_screen(screen_array):
-    """
-    Generate a grid from the unprocessed screen's raw pixel data.
-    
-    Parameters:
-    - screen_array: The NumPy array of the unprocessed screen from pyboy.screen.ndarray.
-    
-    Returns:
-    - A 2D grid (18x10) where each cell represents the presence of a block (1) or empty space (0).
-    """
+def get_grid_from_raw_screen(screen_array, pyboy):
     tab = [[0 for _ in range(10)] for _ in range(18)]  # Initialize an 18x10 grid
     x_start = 21  # Starting x-coordinate for the first cell
     y_start = 5   # Starting y-coordinate for the first cell
@@ -63,7 +54,19 @@ def get_grid_from_raw_screen(screen_array):
         x = x_start  # Reset x to the start of the next row
         y += size    # Move to the next block vertically
     
+    x, y = get_pos(pyboy)
+    tab[y][x] = 2
+
     return tab
 
 def random_pieces(pyboy):
     pyboy.memory[NEXT_TETROMINO_ADDRESS] = pieces_index[random.randint(0, len(pieces_index)-1)]
+
+def get_pos(pyboy):
+    x = int((pyboy.memory[X]/8)-3)
+    y = int((pyboy.memory[Y]/8)-2)
+
+    x = x if x >= 0 else 0
+    x = x if x < 10 else 9
+
+    return x, y
