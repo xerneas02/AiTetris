@@ -81,7 +81,7 @@ for episode in range(EPISODES):
             pyboy.tick()
 
         # Calculate reward and check if the game is over
-        reward = get_game_reward(pyboy)
+        reward = get_game_reward(pyboy, current_grid)
         done = is_done(pyboy)
 
         # Prepare next state and store experience in agent's memory
@@ -102,6 +102,7 @@ for episode in range(EPISODES):
     except Exception as e:
         print(f"Error: Couldn't save the model. Reason: {e}")
 
+    reward = get_game_reward(pyboy, current_grid)
     # Log the reward for the episode
     with open("rewards.log", "a") as f:
         f.write(f"{reward}\n")
