@@ -55,18 +55,130 @@ def get_grid_from_raw_screen(screen_array, pyboy):
         y += size    # Move to the next block vertically
     
     x, y = get_pos(pyboy)
+    print(y)
+    
     tab[y][x] = 2
+    rot = pyboy.memory[ROTATION]
+    #L Right
+    if rot == 0:
+        x, y = x-1, y+1
+        tab[y][x] = 2
+        tab[y-1][x]   = 2
+        tab[y-1][x+1] = 2
+        tab[y-1][x+2] = 2
+    
+    if rot == 1:
+        x, y = x+1, y+1
+        tab[y][x] = 2
+        tab[y][x-1]   = 2
+        tab[y-1][x-1] = 2
+        tab[y-2][x-1] = 2
+        
+    if rot == 2:
+        x, y = x+1, y
+        tab[y][x] = 2
+        tab[y-1][x] = 2
+        tab[y][x-1] = 2
+        tab[y][x-2] = 2
+        
+    if rot == 3:
+        x, y = x, y+1
+        tab[y][x] = 2
+        tab[y-1][x]   = 2
+        tab[y-2][x]   = 2
+        tab[y-2][x-1] = 2
+        
+    #L Left
+    if rot == 4:
+        tab[y][x-1]   = 2
+        tab[y][x+1]   = 2
+        tab[y+1][x+1] = 2
+    
+    if rot == 5:
+        tab[y-1][x]   = 2
+        tab[y-1][x+1] = 2
+        tab[y+1][x]   = 2
+        
+    if rot == 6:
+        tab[y][x+1] = 2
+        tab[y][x-1] = 2
+        tab[y-1][x-1] = 2
+        
+    if rot == 7:
+        tab[y-1][x]   = 2
+        tab[y+1][x]   = 2
+        tab[y+1][x-1] = 2
+    
+    #Line Piece 
+    if rot == 8 or rot == 10: 
+        for i in range(4):
+            tab[y][x+i-1] = 2
+            
+    if rot == 9 or rot == 11:
+        for i in range(4):
+            tab[y-i+1][x] = 2
+            
+    #Square
+    if rot >= 12 and rot <= 15:
+        tab[y+1][x]   = 2
+        tab[y][x+1]   = 2
+        tab[y+1][x+1] = 2
+    
+    #Zigzag Left
+    if rot == 18 or rot == 16:
+        tab[y][x-1]   = 2
+        tab[y+1][x]   = 2
+        tab[y+1][x+1] = 2
+    
+    if rot == 17 or rot == 19:
+        tab[y][x-1]   = 2
+        tab[y-1][x]   = 2
+        tab[y+1][x-1] = 2
+    
+    #Zigzag Right
+    if rot == 20 or rot == 22:
+        tab[y][x+1]   = 2
+        tab[y+1][x]   = 2
+        tab[y+1][x-1] = 2
+    
+    if rot == 21 or rot == 23:
+        tab[y][x-1]   = 2
+        tab[y+1][x]   = 2
+        tab[y-1][x-1] = 2
+    
+    #  @@@
+    #   @
+    if rot == 24:
+        tab[y][x+1] = 2
+        tab[y][x-1] = 2
+        tab[y+1][x] = 2
 
+    if rot == 25:
+        tab[y][x+1] = 2
+        tab[y-1][x] = 2
+        tab[y+1][x] = 2
+        
+    if rot == 26:
+        tab[y][x+1] = 2
+        tab[y][x-1] = 2
+        tab[y-1][x] = 2
+        
+    if rot == 27:
+        tab[y][x-1] = 2
+        tab[y-1][x] = 2
+        tab[y+1][x] = 2
+    
     return tab
 
 def random_pieces(pyboy):
     pyboy.memory[NEXT_TETROMINO_ADDRESS] = pieces_index[random.randint(0, len(pieces_index)-1)]
 
 def get_pos(pyboy):
-    x = int((pyboy.memory[X]/8)-3)
-    y = int((pyboy.memory[Y]/8)-2)
+    x = int(((pyboy.memory[ACTIVE_TETROMINO_X]+1)/8)-4)
+    y = int((pyboy.memory[ACTIVE_TETROMINO_Y]/8)-2)
+    
 
-    x = x if x >= 0 else 0
-    x = x if x < 10 else 9
+    #x = x if x >= 0 else 0
+    #x = x if x < 10 else 9
 
     return x, y

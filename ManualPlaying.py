@@ -156,8 +156,8 @@ def play_manually():
     while not done:
         grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
 
-        #clear_console()
-        #print_grid(grid)
+        clear_console()
+        print_grid(grid)
         print(pyboy.memory[ROTATION])
 
         if show_display:
