@@ -16,7 +16,7 @@ def create_cnn(input_shape, num_actions):
     model.add(Dense(32, activation='relu'))
     
     # Output layer: One action for each possible move (e.g., num_actions moves)
-    model.add(Dense(num_actions, activation='sigmoid'))
-    model.compile(loss='mse', optimizer='adam')
+    model.add(Dense(num_actions, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam')
     
     return model

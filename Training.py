@@ -13,7 +13,7 @@ from Constante import action_space, num_actions
 
 
 # Constants
-MODEL_NAME = "Model/model.h5"
+MODEL_NAME = "Model/model.keras"
 ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = True
 INPUT_SHAPE_GRID = (2, 18, 10)

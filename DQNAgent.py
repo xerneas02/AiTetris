@@ -4,6 +4,7 @@ import time
 from collections import defaultdict  # Import defaultdict for action tracking
 from Constante import action_space as action_table
 import gc
+import tensorflow as tf
 
 
 class DQNAgent:
@@ -13,33 +14,38 @@ class DQNAgent:
         self.memory = []
         self.gamma = 0.98  # Discount factor
         self.epsilon = 1.0  # Exploration rate
-        self.epsilon_decay = 0.95
+        self.epsilon_decay = 0.995
         self.epsilon_min = 0.0
         self.learning_rate = 0.001
         self.batch_size = batch_size
         self.epochs = epochs
         self.verbose = verbose
-        
+
         # Action count dictionary to track action usage
         self.action_count = defaultdict(int)
+
+        # Compile the model's call function
+        self.predict_fn = tf.function(self.model)
+
     
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-            action = random.randint(0, self.action_space-1)  # Explore
+            action = random.randint(0, self.action_space - 1)  # Explore
         else:
-            # Predict Q-values based on the grid (current + previous)
-            q_values = self.model.predict(np.array([state]), verbose=0)
+            # Use the compiled predict function
+            q_values = self.predict_fn(np.array([state]))
             action = np.argmax(q_values[0])
 
-        
         # Increment the count of the chosen action
         self.action_count[action] += 1
-        
+
         return action
+
+
 
     def store_experience(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > 10000:
+        if len(self.memory) > 100000:
             self.memory.pop(0)
 
     def optimized_train_step(self, states, q_values):

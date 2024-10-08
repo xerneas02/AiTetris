@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def lire_valeurs_fichier(nom_fichier):
     with open(nom_fichier, 'r') as fichier:
         lignes = fichier.readlines()
-        valeurs = [int(ligne.strip()) for ligne in lignes]
+        valeurs = [float(ligne.strip()) for ligne in lignes]  # Utilisation de float au lieu de int
     return valeurs
 
 # Chemin vers ton fichier
