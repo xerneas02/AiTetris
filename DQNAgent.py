@@ -1,33 +1,29 @@
 import random
 import numpy as np
 import time
-from collections import defaultdict  # Import defaultdict for action tracking
-from Constante import action_space as action_table
+from collections import defaultdict, deque
 import gc
 import tensorflow as tf
+from Constante import action_space as action_table
+
 
 
 class DQNAgent:
-    def __init__(self, model, action_space, batch_size=32, epochs=1, verbose=0):
+    def __init__(self, model, action_space, batch_size=32, epochs=1, epsilon_stop_episode=2000, mem_size=1000, verbose=0):
         self.model = model
         self.action_space = action_space
-        self.memory = []
-        self.gamma = 0.98  # Discount factor
-        self.epsilon = 1.0  # Exploration rate
-        self.epsilon_decay = 0.995
-        self.epsilon_min = 0.0
-        self.learning_rate = 0.001
+        self.memory = deque(maxlen=mem_size)
+        self.gamma = 0.95  # Discount factor
+        self.epsilon = 1.0  # Start fully exploring
+        self.epsilon_min = 0.1
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / epsilon_stop_episode  # Linear decay
         self.batch_size = batch_size
         self.epochs = epochs
-        self.verbose = verbose
-
-        # Action count dictionary to track action usage
         self.action_count = defaultdict(int)
-
-        # Compile the model's call function
+        self.verbose = verbose
+        self.replay_start_size = 500  # Minimum experiences before training
         self.predict_fn = tf.function(self.model)
 
-    
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             action = random.randint(0, self.action_space - 1)  # Explore
@@ -41,18 +37,14 @@ class DQNAgent:
 
         return action
 
-
-
     def store_experience(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > 100000:
-            self.memory.pop(0)
 
     def optimized_train_step(self, states, q_values):
         self.model.fit(states, q_values, epochs=self.epochs, verbose=0)
 
     def train(self):
-        if len(self.memory) < self.batch_size:
+        if len(self.memory) < self.batch_size or len(self.memory) < self.replay_start_size:
             return
         
         start_time = time.time()
@@ -79,9 +71,7 @@ class DQNAgent:
         gc.collect()
 
         if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-        
-        self.memory = []
+            self.epsilon -= self.epsilon_decay  # Linear decay
 
         elapsed_time = time.time() - start_time
 

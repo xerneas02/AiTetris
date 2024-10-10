@@ -9,12 +9,14 @@ def get_game_reward(pyboy, grid):
     return reward + grid_reward
 
 def get_grid_reward(grid):
-    reward = 0
-    for i in range(len(grid)):
-        count = grid[i].count(1)
-        if count > 0:
-            reward += -(len(grid[0]) - count)*i
-    return reward        
+    # Add rewards for line clear and penalties for stacking high or leaving gaps
+    # Penalize creating gaps
+    penalty = 0
+    for row in grid:
+        if 0 in row and row.count(1) > 0:
+            penalty -= 1  # Penalize rows with gaps
+
+    return penalty    
 
 def is_done(pyboy):
     return pyboy.memory[GAME_STATE] == 13

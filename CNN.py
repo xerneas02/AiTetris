@@ -1,22 +1,18 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, Flatten, Dense
+from tensorflow.keras.layers import Dense, Flatten
 
 def create_cnn(input_shape, num_actions):
     model = Sequential()
     
-    # Input layer with shape (18, 10, 2) -> two grids stacked (current and previous)
-    #model.add(Conv2D(32, (3, 3), strides=1, activation='relu', input_shape=input_shape))
-    #model.add(Conv2D(64, (3, 3), strides=1, activation='relu'))
-    
-    # Flatten the convolutional layers output
+    # Flatten the input grid
     model.add(Flatten(input_shape=input_shape))
     
-    # Fully connected layers
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(32, activation='relu'))
+    # Simple dense layers
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
     
-    # Output layer: One action for each possible move (e.g., num_actions moves)
-    model.add(Dense(num_actions, activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
+    # Output layer for each possible action
+    model.add(Dense(num_actions, activation='linear'))  # Linear output for Q-values
+    model.compile(optimizer='adam', loss='mse')  # Mean squared error for DQN
     
     return model

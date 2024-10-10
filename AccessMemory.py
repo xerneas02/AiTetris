@@ -35,6 +35,9 @@ def get_pixel_color_from_raw_screen(screen_array, x, y):
     # Return the pixel value at the given coordinates
     return tuple(screen_array[y, x])  # Access as (y, x) since NumPy uses row-major order
 
+def is_in_bounds(tab, x, y):
+    return 0 <= x < len(tab[0]) and 0 <= y < len(tab)
+
 def get_grid_from_raw_screen(screen_array, pyboy):
     tab = [[0 for _ in range(10)] for _ in range(18)]  # Initialize an 18x10 grid
     x_start = 21  # Starting x-coordinate for the first cell
@@ -55,117 +58,141 @@ def get_grid_from_raw_screen(screen_array, pyboy):
         y += size    # Move to the next block vertically
     
     x, y = get_pos(pyboy)
-    
-    tab[y][x] = 2
+
+    if is_in_bounds(tab, x, y):
+        tab[y][x] = 2
+
     rot = pyboy.memory[ROTATION]
-    #L Right
+
+    # L Right
     if rot == 0:
-        x, y = x-1, y+1
-        tab[y][x] = 2
-        tab[y-1][x]   = 2
-        tab[y-1][x+1] = 2
-        tab[y-1][x+2] = 2
-    
+        x, y = x - 1, y + 1
+        if is_in_bounds(tab, x, y):
+            tab[y][x] = 2
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+        if is_in_bounds(tab, x + 1, y - 1):
+            tab[y - 1][x + 1] = 2
+        if is_in_bounds(tab, x + 2, y - 1):
+            tab[y - 1][x + 2] = 2
+
+    # L Right rotated
     if rot == 1:
-        x, y = x+1, y+1
-        tab[y][x] = 2
-        tab[y][x-1]   = 2
-        tab[y-1][x-1] = 2
-        tab[y-2][x-1] = 2
-        
-    if rot == 2:
-        x, y = x+1, y
-        tab[y][x] = 2
-        tab[y-1][x] = 2
-        tab[y][x-1] = 2
-        tab[y][x-2] = 2
-        
-    if rot == 3:
-        x, y = x, y+1
-        tab[y][x] = 2
-        tab[y-1][x]   = 2
-        tab[y-2][x]   = 2
-        tab[y-2][x-1] = 2
-        
-    #L Left
+        x, y = x + 1, y + 1
+        if is_in_bounds(tab, x, y):
+            tab[y][x] = 2
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x - 1, y - 1):
+            tab[y - 1][x - 1] = 2
+        if is_in_bounds(tab, x - 1, y - 2):
+            tab[y - 2][x - 1] = 2
+
+    # L Left
     if rot == 4:
-        tab[y][x-1]   = 2
-        tab[y][x+1]   = 2
-        tab[y+1][x+1] = 2
-    
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x + 1, y + 1):
+            tab[y + 1][x + 1] = 2
+
+    # L Left rotated
     if rot == 5:
-        tab[y-1][x]   = 2
-        tab[y-1][x+1] = 2
-        tab[y+1][x]   = 2
-        
-    if rot == 6:
-        tab[y][x+1] = 2
-        tab[y][x-1] = 2
-        tab[y-1][x-1] = 2
-        
-    if rot == 7:
-        tab[y-1][x]   = 2
-        tab[y+1][x]   = 2
-        tab[y+1][x-1] = 2
-    
-    #Line Piece 
-    if rot == 8 or rot == 10: 
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+        if is_in_bounds(tab, x + 1, y - 1):
+            tab[y - 1][x + 1] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
+
+    # Line Piece
+    if rot == 8 or rot == 10:
         for i in range(4):
-            tab[y][x+i-1] = 2
-            
+            if is_in_bounds(tab, x + i - 1, y):
+                tab[y][x + i - 1] = 2
+
     if rot == 9 or rot == 11:
         for i in range(4):
-            tab[y-i+1][x] = 2
-            
-    #Square
+            if is_in_bounds(tab, x, y - i + 1):
+                tab[y - i + 1][x] = 2
+
+    # Square
     if rot >= 12 and rot <= 15:
-        tab[y+1][x]   = 2
-        tab[y][x+1]   = 2
-        tab[y+1][x+1] = 2
-    
-    #Zigzag Left
-    if rot == 18 or rot == 16:
-        tab[y][x-1]   = 2
-        tab[y+1][x]   = 2
-        tab[y+1][x+1] = 2
-    
+        if is_in_bounds(tab, x + 1, y + 1):
+            tab[y + 1][x] = 2
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x + 1, y + 1):
+            tab[y + 1][x + 1] = 2
+
+    # Zigzag Left
+    if rot == 16 or rot == 18:
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
+        if is_in_bounds(tab, x + 1, y + 1):
+            tab[y + 1][x + 1] = 2
+
     if rot == 17 or rot == 19:
-        tab[y][x-1]   = 2
-        tab[y-1][x]   = 2
-        tab[y+1][x-1] = 2
-    
-    #Zigzag Right
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+        if is_in_bounds(tab, x - 1, y + 1):
+            tab[y + 1][x - 1] = 2
+
+    # Zigzag Right
     if rot == 20 or rot == 22:
-        tab[y][x+1]   = 2
-        tab[y+1][x]   = 2
-        tab[y+1][x-1] = 2
-    
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
+        if is_in_bounds(tab, x - 1, y + 1):
+            tab[y + 1][x - 1] = 2
+
     if rot == 21 or rot == 23:
-        tab[y][x-1]   = 2
-        tab[y+1][x]   = 2
-        tab[y-1][x-1] = 2
-    
-    #  @@@
-    #   @
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
+        if is_in_bounds(tab, x - 1, y - 1):
+            tab[y - 1][x - 1] = 2
+
+    # @@@
+    #  @
     if rot == 24:
-        tab[y][x+1] = 2
-        tab[y][x-1] = 2
-        tab[y+1][x] = 2
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
 
     if rot == 25:
-        tab[y][x+1] = 2
-        tab[y-1][x] = 2
-        tab[y+1][x] = 2
-        
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
+
     if rot == 26:
-        tab[y][x+1] = 2
-        tab[y][x-1] = 2
-        tab[y-1][x] = 2
-        
+        if is_in_bounds(tab, x + 1, y):
+            tab[y][x + 1] = 2
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+
     if rot == 27:
-        tab[y][x-1] = 2
-        tab[y-1][x] = 2
-        tab[y+1][x] = 2
+        if is_in_bounds(tab, x - 1, y):
+            tab[y][x - 1] = 2
+        if is_in_bounds(tab, x, y - 1):
+            tab[y - 1][x] = 2
+        if is_in_bounds(tab, x, y + 1):
+            tab[y + 1][x] = 2
     
     return tab
 
