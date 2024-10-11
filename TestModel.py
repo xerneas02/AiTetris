@@ -7,6 +7,7 @@ from AccessMemory import get_grid_from_raw_screen, random_pieces
 from Rewards import get_game_reward, is_done
 from Constante import action_space, num_actions, stop_action
 from MemoryAdresse import ROTATION, ACTIVE_TETROMINO_Y
+from CNN import create_cnn
 
 # Constants
 MODEL_NAME = "Model/model.keras"
@@ -25,7 +26,7 @@ if os.path.exists(MODEL_NAME):
     model = load_model(MODEL_NAME)
     print('Model loaded successfully.')
 else:
-    raise ValueError("Trained model not found! Please train the model before testing.")
+    model = create_cnn(INPUT_SHAPE_GRID, num_actions)
 
 model.summary()
 
@@ -43,10 +44,11 @@ def test_model():
 
         done = False
         episode_reward = 0
+        total_frames = 0
 
         while not done:
+            random_pieces(pyboy)
             # Get the current game grid
-            current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
             state = np.stack([previous_grid, current_grid])
 
             # Agent chooses an action
@@ -58,22 +60,27 @@ def test_model():
             # Execute the action
             if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
                 pyboy.send_input(action)
-            
-            for _ in range(FRAMES_PER_ACTION): 
+        
+            previous_grid = current_grid
+            while previous_grid == current_grid: 
                 pyboy.tick()
-                
+                current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
             pyboy.send_input(stop)
+            print(action_index)
 
             # Calculate reward and check if game is done
-            reward = get_game_reward(pyboy, current_grid)
+            reward = get_game_reward(pyboy, current_grid, total_frames)
+            
+            
             episode_reward += reward
             done = is_done(pyboy)
+            
 
             # Update grid for the next step
-            previous_grid = current_grid
+            total_frames += 1
 
         total_rewards += episode_reward
-        print(f"Episode {episode + 1}, Score: {episode_reward}")
+        print(f"Episode {episode + 1}, Score: {episode_reward/total_frames}")
 
     # Print the average reward after all test episodes
     print(f"Average reward after {TEST_EPISODES} test episodes: {total_rewards / TEST_EPISODES}")

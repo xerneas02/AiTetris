@@ -2,10 +2,11 @@ import numpy as np
 import hnswlib
 from AccessMemory import *  # Utiliser les fonctions que tu as déjà pour accéder à la mémoire du jeu
 
+
 # Fonction principale de récompense avec KNN pour l'exploration
-def get_game_reward(pyboy, grid): 
+def get_game_reward(pyboy, grid, frames): 
     reward = get_score(pyboy)
-    grid_reward = get_grid_reward(grid)*0.1
+    grid_reward = get_grid_reward(grid)
     return reward + grid_reward
 
 def get_grid_reward(grid):
@@ -14,7 +15,7 @@ def get_grid_reward(grid):
     penalty = 0
     for row in grid:
         if 0 in row and row.count(1) > 0:
-            penalty -= 1  # Penalize rows with gaps
+            penalty -= row.count(0) # Penalize rows with gaps
 
     return penalty    
 

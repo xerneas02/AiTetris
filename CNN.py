@@ -10,6 +10,7 @@ def create_cnn(input_shape, num_actions):
     # Simple dense layers
     model.add(Dense(64, activation='relu'))
     model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
     
     # Output layer for each possible action
     model.add(Dense(num_actions, activation='linear'))  # Linear output for Q-values

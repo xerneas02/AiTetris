@@ -19,7 +19,7 @@ ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = False
 INPUT_SHAPE_GRID = (2, 18, 10)
 FRAMES_PER_ACTION = 1  # Reduced repetition
-EPISODES = 3000
+EPISODES = 6000
 BATCH_SIZE = 128
 EPOCHS = 1
 
@@ -42,7 +42,7 @@ else:
 model.summary()
 
 # Initialize the DQN agent
-agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=EPISODES, mem_size=1000)
+agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=EPISODES/2, mem_size=1000)
 
 # Main training loop
 for episode in range(EPISODES):
@@ -59,7 +59,6 @@ for episode in range(EPISODES):
     
     while not done:
         random_pieces(pyboy)
-        current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
         state = np.stack([previous_grid, current_grid])
         
         action_index = agent.act(state)
@@ -70,22 +69,24 @@ for episode in range(EPISODES):
         if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
             pyboy.send_input(action)
         
-        for _ in range(FRAMES_PER_ACTION): 
+        previous_grid = current_grid
+        while previous_grid == current_grid: 
             pyboy.tick()
+            current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
         pyboy.send_input(stop)
 
 
-        reward = get_game_reward(pyboy, current_grid)
+        reward = get_game_reward(pyboy, current_grid, total_input)
         done = is_done(pyboy)
+        
+        reward += -20 if done else 0
         
         total_reward += reward
         total_input  += 1
 
-        next_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
-        next_state = np.stack([current_grid, next_grid])
+        next_state = np.stack([previous_grid, current_grid])
         agent.store_experience(state, action_index, reward, next_state, done)
 
-        previous_grid = current_grid
 
     agent.train()
 
