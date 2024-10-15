@@ -69,7 +69,7 @@ def test_model():
             print(action_index)
 
             # Calculate reward and check if game is done
-            reward = get_game_reward(pyboy, current_grid, total_frames)
+            reward = get_game_reward(pyboy, current_grid)
             
             
             episode_reward += reward

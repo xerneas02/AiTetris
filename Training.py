@@ -42,7 +42,7 @@ else:
 model.summary()
 
 # Initialize the DQN agent
-agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=EPISODES/2, mem_size=1000)
+agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=300, mem_size=1000)
 
 # Main training loop
 for episode in range(EPISODES):
@@ -76,7 +76,7 @@ for episode in range(EPISODES):
         pyboy.send_input(stop)
 
 
-        reward = get_game_reward(pyboy, current_grid, total_input)
+        reward = get_game_reward(pyboy, current_grid)
         done = is_done(pyboy)
         
         reward += -20 if done else 0
