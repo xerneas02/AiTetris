@@ -1,6 +1,7 @@
 from MemoryAdresse import *
 from Constante import *
 import random
+from copy import deepcopy
 
 def get_score(pyboy):
     # Retrieve the three bytes from memory
@@ -38,7 +39,7 @@ def get_pixel_color_from_raw_screen(screen_array, x, y):
 def is_in_bounds(tab, x, y):
     return 0 <= x < len(tab[0]) and 0 <= y < len(tab)
 
-def get_grid_from_raw_screen(screen_array, pyboy):
+def get_grid_from_raw_screen(screen_array, pyboy, show = True):
     tab = [[0 for _ in range(10)] for _ in range(18)]  # Initialize an 18x10 grid
     x_start = 21  # Starting x-coordinate for the first cell
     y_start = 5   # Starting y-coordinate for the first cell
@@ -57,144 +58,26 @@ def get_grid_from_raw_screen(screen_array, pyboy):
         x = x_start  # Reset x to the start of the next row
         y += size    # Move to the next block vertically
     
-    x, y = get_pos(pyboy)
+    if show:
+        x, y = get_pos(pyboy)
 
-    if is_in_bounds(tab, x, y):
-        tab[y][x] = 2
 
-    rot = pyboy.memory[ROTATION]
+        rot = pyboy.memory[ROTATION]
 
-    # L Right
-    if rot == 0:
-        x, y = x - 1, y + 1
-        if is_in_bounds(tab, x, y):
-            tab[y][x] = 2
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-        if is_in_bounds(tab, x + 1, y - 1):
-            tab[y - 1][x + 1] = 2
-        if is_in_bounds(tab, x + 2, y - 1):
-            tab[y - 1][x + 2] = 2
-
-    # L Right rotated
-    if rot == 1:
-        x, y = x + 1, y + 1
-        if is_in_bounds(tab, x, y):
-            tab[y][x] = 2
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x - 1, y - 1):
-            tab[y - 1][x - 1] = 2
-        if is_in_bounds(tab, x - 1, y - 2):
-            tab[y - 2][x - 1] = 2
-
-    # L Left
-    if rot == 4:
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x + 1, y + 1):
-            tab[y + 1][x + 1] = 2
-
-    # L Left rotated
-    if rot == 5:
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-        if is_in_bounds(tab, x + 1, y - 1):
-            tab[y - 1][x + 1] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-
-    # Line Piece
-    if rot == 8 or rot == 10:
-        for i in range(4):
-            if is_in_bounds(tab, x + i - 1, y):
-                tab[y][x + i - 1] = 2
-
-    if rot == 9 or rot == 11:
-        for i in range(4):
-            if is_in_bounds(tab, x, y - i + 1):
-                tab[y - i + 1][x] = 2
-
-    # Square
-    if rot >= 12 and rot <= 15:
-        if is_in_bounds(tab, x + 1, y + 1):
-            tab[y + 1][x] = 2
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x + 1, y + 1):
-            tab[y + 1][x + 1] = 2
-
-    # Zigzag Left
-    if rot == 16 or rot == 18:
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-        if is_in_bounds(tab, x + 1, y + 1):
-            tab[y + 1][x + 1] = 2
-
-    if rot == 17 or rot == 19:
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-        if is_in_bounds(tab, x - 1, y + 1):
-            tab[y + 1][x - 1] = 2
-
-    # Zigzag Right
-    if rot == 20 or rot == 22:
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-        if is_in_bounds(tab, x - 1, y + 1):
-            tab[y + 1][x - 1] = 2
-
-    if rot == 21 or rot == 23:
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-        if is_in_bounds(tab, x - 1, y - 1):
-            tab[y - 1][x - 1] = 2
-
-    # @@@
-    #  @
-    if rot == 24:
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-
-    if rot == 25:
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
-
-    if rot == 26:
-        if is_in_bounds(tab, x + 1, y):
-            tab[y][x + 1] = 2
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-
-    if rot == 27:
-        if is_in_bounds(tab, x - 1, y):
-            tab[y][x - 1] = 2
-        if is_in_bounds(tab, x, y - 1):
-            tab[y - 1][x] = 2
-        if is_in_bounds(tab, x, y + 1):
-            tab[y + 1][x] = 2
+        draw_tetromino(tab, rot, x, y)
     
     return tab
+
+def draw_tetromino(grid, rot, x, y, value = 2, verif = False):
+    for i, j in piece_rotation[rot]:
+        if is_in_bounds(grid, x+i, y+j) and grid[y+j][x+i] == 1 and verif:
+            return None
+        if is_in_bounds(grid, x+i, y+j):
+            grid[y+j][x+i] = value
+        elif verif:
+            return None
+    
+    return grid
 
 def random_pieces(pyboy):
     pyboy.memory[NEXT_TETROMINO_ADDRESS] = pieces_index[random.randint(0, len(pieces_index)-1)]
@@ -202,9 +85,46 @@ def random_pieces(pyboy):
 def get_pos(pyboy):
     x = int(((pyboy.memory[ACTIVE_TETROMINO_X]+1)/8)-4)
     y = int((pyboy.memory[ACTIVE_TETROMINO_Y]/8)-2)
-    
-
-    #x = x if x >= 0 else 0
-    #x = x if x < 10 else 9
-
     return x, y
+
+def next_rotation(rotation):
+    rotation += 1
+    if rotation%4 == 0:
+        rotation -= 4
+    return rotation
+
+def get_next_states(grid, x, y, rot):
+
+    tab = deepcopy(grid)
+    
+    draw_tetromino(tab, rot, x, y, 0)
+
+    next_states = dict()
+    next_rot = next_rotation(rot)
+
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x-1, y, verif=True)
+    if grid_tmp: next_states[0] = (rot, x-1, y, grid_tmp)
+
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x+1, y, verif=True)
+    if grid_tmp: next_states[1] = (rot, x+1, y, grid_tmp)
+
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x, y+1, verif=True)
+    if grid_tmp: next_states[2] = (rot, x, y+1, grid_tmp)
+
+    grid_tmp = draw_tetromino(deepcopy(tab), next_rot, x, y, verif=True)
+    if grid_tmp: next_states[3] = (next_rot, x, y, grid_tmp)
+
+    return next_states
+
+def get_max_key(d):
+    # Find the maximum value in the dictionary
+    max_value = max(d.values())
+    
+    # Get all keys that have the maximum value
+    max_keys = [key for key, value in d.items() if value == max_value]
+    
+    # Randomly select one key if there are multiple with the same max value
+    return random.choice(max_keys)
+
+def get_max_value(d):
+    return max(d.values())

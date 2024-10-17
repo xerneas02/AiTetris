@@ -44,6 +44,8 @@ def calculate_complete_lines(grid):
 
 # Fonction de récompense améliorée
 def get_grid_reward(grid):
+    grid = [[1 if grid[i][j] == 2 else grid[i][j] for j in range(len(grid[i]))] for i in range(len(grid))]
+    
     aggregate_height = calculate_aggregate_height(grid)
     holes = calculate_holes(grid)
     bumpiness = calculate_bumpiness(grid)
@@ -53,15 +55,15 @@ def get_grid_reward(grid):
     GA_ParamA = -0.510066
     GA_ParamB = 0.760666
     GA_ParamC = -0.35663
-    GA_ParamD = 0.760666  # Peut être ajusté pour les lignes complétées
+    GA_ParamD = 0.760666  
     
     # Calcul du score heuristique
     heuristic_score = (GA_ParamA * aggregate_height) + (GA_ParamB * holes) + (GA_ParamC * bumpiness) + (GA_ParamD * complete_lines)
     
     return heuristic_score
 
-def get_game_reward(pyboy, grid): 
-    reward = get_score(pyboy)*0
+def get_game_reward(pyboy, grid, n_pieces): 
+    reward = get_score(pyboy)*0 + n_pieces - 20
     heuristic_reward = get_grid_reward(grid)
     return reward + heuristic_reward
 

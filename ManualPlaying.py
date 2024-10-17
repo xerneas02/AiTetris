@@ -3,7 +3,6 @@ import pyboy.utils
 from pynput import keyboard
 from CNN import *
 from DQNAgent import *
-from GameFrame import *
 
 from tensorflow.keras.optimizers import Adam
 from pyboy import PyBoy
@@ -59,57 +58,7 @@ key_mapping = {
     'a': 'start',
     'e': 'select',
     'r': 'save',  # "R" key for saving the game state
-    'p': 'screen'
 }
-
-
-
-def save_preprocessed_screen(pyboy, Ncouleur, filename):
-    """
-    Capture the preprocessed screen and the raw screen from PyBoy and save both as image files.
-    
-    Parameters:
-    - pyboy: The instance of PyBoy emulator.
-    - Ncouleur: Number of colors used in preprocess_frame (passed to your preprocess function).
-    - filename: The name of the file to save the unprocessed screen (e.g., 'screen.png').
-                The preprocessed screen will be saved as 'prepro_{filename}'.
-    """
-    # Preprocess the screen using the existing function
-    preprocessed_screen = preprocess_frame(pyboy.screen.ndarray, Ncouleur)
-    
-    # Get the raw screen from PyBoy (original screen)
-    raw_screen = pyboy.screen.ndarray
-
-
-    print(f"Shape of preprocessed screen: {preprocessed_screen.shape}")
-    print(f"Data type of preprocessed screen: {preprocessed_screen.dtype}")
-
-    # Squeeze the extra dimension if it's grayscale with shape (84, 84, 1)
-    if preprocessed_screen.shape[-1] == 1:
-        preprocessed_screen = np.squeeze(preprocessed_screen, axis=-1)
-
-    # Ensure both preprocessed and raw data are in uint8 format
-    preprocessed_screen = np.uint8(preprocessed_screen * 255)  # Convert float64 to uint8 (assuming values are in [0, 1])
-    raw_screen = np.uint8(raw_screen)  # Assuming raw screen values are already in [0, 255]
-
-    # Save the preprocessed screen (assumed to be grayscale)
-    if preprocessed_screen.ndim == 2:  # Grayscale image
-        image_pre = Image.fromarray(preprocessed_screen, 'L')  # 'L' mode is for grayscale
-    else:
-        raise ValueError(f"Unsupported preprocessed screen shape: {preprocessed_screen.shape}")
-
-    # Handle the raw screen (144, 160, 4) which is RGBA (with an alpha channel)
-    if raw_screen.ndim == 3 and raw_screen.shape[-1] == 4:  # RGBA image
-        image_raw = Image.fromarray(raw_screen, 'RGBA')  # Handle alpha channel
-    else:
-        raise ValueError(f"Unsupported raw screen shape: {raw_screen.shape}")
-
-    # Save both images to files
-    image_pre.save(f"prepro_{filename}")  # Save the preprocessed screen
-    image_raw.save(filename)  # Save the raw screen with RGBA format
-    
-    print(f"Preprocessed screen saved as 'prepro_{filename}'")
-    print(f"Raw screen saved as '{filename}'")
 
 
 # Store the currently pressed keys
@@ -153,29 +102,44 @@ def play_manually():
         pyboy.load_state(f)
     total_frames = 0
     done = False
+    reset_frame = False
     while not done:
         grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
 
-        clear_console()
-        print_grid(grid)
-        print(pyboy.memory[ROTATION])
+        if total_frames%53 == 52 or reset_frame:
+            total_frames = 53
+            reset_frame = False
+        #clear_console()
+        #print_grid(grid)
+        #print(pyboy.memory[ROTATION])
+        print(total_frames, total_frames%53)
 
         if show_display:
             time.sleep(0.016667)  # 60 FPS
+        
+        current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
+        previous_grid_test = current_grid_test
 
         # Check which keys are pressed and send the corresponding action to the game
         for action in keys_pressed:
             if action == 'save':  # Check if the save state button was pressed
                 save_game_state(pyboy, "save_state.state")
-            if action == 'screen':  # Check if the save state button was pressed
-                save_preprocessed_screen(pyboy, Ncouleur, "screen.png")
+            elif action == 'down':
+                pyboy.button(action)
+                reset_frame = True
             else:
                 pyboy.button(action)
 
-        # Advance the game by one tick
-        pyboy.tick()
+        x, y = get_pos(pyboy)
+        last_y = y
+        while (current_grid_test == previous_grid_test or y != get_pos(pyboy)[1]) and not is_done(pyboy): 
+            pyboy.tick()
+            current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
+            x, y = get_pos(pyboy)
+            total_frames += 1
 
-        total_frames += 1
+        if y < last_y :
+            total_frames = 0
 
 
 # Start the manual control mode

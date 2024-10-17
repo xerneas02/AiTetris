@@ -11,7 +11,7 @@ from CNN import create_cnn
 from Minimax import *
 
 # Constants
-MODEL_NAME = "Model/model.keras"
+MODEL_NAME = "Model/2900_model.keras"
 ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = True
 INPUT_SHAPE_GRID = (2, 18, 10)
@@ -57,15 +57,23 @@ def test_model():
         while not done:
             # Get the current game grid
             state = np.stack([previous_grid, current_grid])
+    
+            rot = pyboy.memory[ROTATION]
 
+            if frames%53 == 52 and not reset_off_set:
+                frames = 53 
+                reset_off_set = True
 
             # Agent chooses an action
-            q_values = model.predict(np.array([state]), verbose=0)  # Predict action using the model
+            # q_values = model.predict(np.array([state]), verbose=0)  # Predict action using the model
+            result = minimax(current_grid, current_x, current_y, rot, 6)
 
-            action_index = np.argmax(q_values[0])  # Select action with the highest Q-value
+            action_index = get_max_key(result) #np.argmax(q_values[0])  # Select action with the highest Q-value
             action = action_space[action_index]
             stop   = stop_action[action_index]
 
+            if action_index != 2:
+                print(frames%53)
 
             # Execute the action
             if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
@@ -86,6 +94,9 @@ def test_model():
 
             current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
             current_x, current_y = get_pos(pyboy)
+            
+            if current_y > last_y and action_index != 2:
+                print("True")
 
             pyboy.send_input(stop)
             
@@ -97,11 +108,7 @@ def test_model():
             last_x, last_y = current_x, current_y
 
             # Calculate reward and check if game is done
-            rot = pyboy.memory[ROTATION]
-            result = minimax(current_grid, current_x, current_y, rot, 4)
-            reward = get_max_value(result)[0]
-
-            reward = current_y if reward == -999999 else reward
+            reward = get_game_reward(pyboy, current_grid, 0)
             
             if action_index == 2:
                 frames = 0
