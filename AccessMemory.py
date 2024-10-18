@@ -93,6 +93,17 @@ def next_rotation(rotation):
         rotation -= 4
     return rotation
 
+def print_grid(grid):
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            if grid[i][j] == 0:
+                print(".", end="")
+            if grid[i][j] == 1:
+                print("#", end="")
+            if grid[i][j] == 2:
+                print("@", end="")
+        print()
+
 def get_next_states(grid, x, y, rot):
 
     tab = deepcopy(grid)
@@ -110,6 +121,7 @@ def get_next_states(grid, x, y, rot):
 
     grid_tmp = draw_tetromino(deepcopy(tab), rot, x, y+1, verif=True)
     if grid_tmp: next_states[2] = (rot, x, y+1, grid_tmp)
+
 
     grid_tmp = draw_tetromino(deepcopy(tab), next_rot, x, y, verif=True)
     if grid_tmp: next_states[3] = (next_rot, x, y, grid_tmp)

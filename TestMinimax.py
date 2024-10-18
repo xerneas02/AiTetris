@@ -53,6 +53,8 @@ def test_model():
         current_x, current_y = get_pos(pyboy)
         last_x, last_y = current_x, current_y
         reset_off_set = False
+        first = True
+        random_pieces(pyboy)
 
         while not done:
             # Get the current game grid
@@ -66,18 +68,21 @@ def test_model():
 
             # Agent chooses an action
             # q_values = model.predict(np.array([state]), verbose=0)  # Predict action using the model
-            result = minimax(current_grid, current_x, current_y, rot, 4)
+            result = minimax(current_grid, current_x, current_y, rot, 20)
 
             action_index = get_max_key(result) #np.argmax(q_values[0])  # Select action with the highest Q-value
             action = action_space[action_index]
             stop   = stop_action[action_index]
 
-            if action_index != 2:
-                print(frames%53)
+            #if action_index != 2:
+            #    print(frames%53)
 
             # Execute the action
             if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
                 pyboy.send_input(action)
+            elif pyboy.memory[ACTIVE_TETROMINO_Y] == 24 and first:
+                #pyboy.send_input(action_space[number_of_piece%2])
+                first = False
         
             
             previous_grid = current_grid
@@ -95,14 +100,16 @@ def test_model():
             current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
             current_x, current_y = get_pos(pyboy)
             
-            if current_y > last_y and action_index != 2:
-                print("True")
+            #if current_y > last_y and action_index != 2:
+            #    print("True")
 
             pyboy.send_input(stop)
+            pyboy.send_input(stop_action[number_of_piece%2])
             
             if current_y < last_y :
                 random_pieces(pyboy)
                 number_of_piece += 1
+                first = True
                 frames = 0
 
             last_x, last_y = current_x, current_y
