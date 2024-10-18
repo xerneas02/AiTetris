@@ -16,7 +16,7 @@ print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('
 
 # Constants
 FOLDER_NAME = "Model"
-MODEL_NAME = "model.keras"
+MODEL_NAME = "1000_model.keras"
 ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = False
 INPUT_SHAPE_GRID = (2, 18, 10)
@@ -48,7 +48,7 @@ model.summary()
 
 
 # Initialize the DQN agent
-agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=4000, mem_size=1000)
+agent = DQNAgent(model, num_actions, batch_size=BATCH_SIZE, epochs=EPOCHS, epsilon_stop_episode=300, mem_size=1000)
 
 # Main training loop
 for episode in range(EPISODES):
@@ -99,7 +99,7 @@ for episode in range(EPISODES):
 
         #reward = get_game_reward(pyboy, current_grid, number_of_piece)
         rot = pyboy.memory[ROTATION]
-        result = minimax(current_grid, current_x, current_y, rot, 3)
+        result = minimax(current_grid, current_x, current_y, rot, 4)
         reward = get_max_value(result)[0]
         done = is_done(pyboy)
 

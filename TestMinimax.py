@@ -66,7 +66,7 @@ def test_model():
 
             # Agent chooses an action
             # q_values = model.predict(np.array([state]), verbose=0)  # Predict action using the model
-            result = minimax(current_grid, current_x, current_y, rot, 6)
+            result = minimax(current_grid, current_x, current_y, rot, 4)
 
             action_index = get_max_key(result) #np.argmax(q_values[0])  # Select action with the highest Q-value
             action = action_space[action_index]
