@@ -104,7 +104,7 @@ def print_grid(grid):
                 print("@", end="")
         print()
 
-def get_next_states(grid, x, y, rot):
+def get_next_states(grid, x, y, rot, drop=False):
 
     tab = deepcopy(grid)
     
@@ -113,18 +113,20 @@ def get_next_states(grid, x, y, rot):
     next_states = dict()
     next_rot = next_rotation(rot)
 
-    grid_tmp = draw_tetromino(deepcopy(tab), rot, x-1, y, verif=True)
-    if grid_tmp: next_states[0] = (rot, x-1, y, grid_tmp)
+    test_drop = True
 
-    grid_tmp = draw_tetromino(deepcopy(tab), rot, x+1, y, verif=True)
-    if grid_tmp: next_states[1] = (rot, x+1, y, grid_tmp)
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x-1, y+drop, verif=True)
+    if grid_tmp and test_drop: next_states[0] = (rot, x-1, y+drop, grid_tmp)
 
-    grid_tmp = draw_tetromino(deepcopy(tab), rot, x, y+1, verif=True)
-    if grid_tmp: next_states[2] = (rot, x, y+1, grid_tmp)
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x+1, y+drop, verif=True)
+    if grid_tmp and test_drop: next_states[1] = (rot, x+1, y+drop, grid_tmp)
+
+    grid_tmp = draw_tetromino(deepcopy(tab), rot, x, y+1+drop, verif=True)
+    if grid_tmp and test_drop: next_states[2] = (rot, x, y+1+drop, grid_tmp)
 
 
-    grid_tmp = draw_tetromino(deepcopy(tab), next_rot, x, y, verif=True)
-    if grid_tmp: next_states[3] = (next_rot, x, y, grid_tmp)
+    grid_tmp = draw_tetromino(deepcopy(tab), next_rot, x, y+drop, verif=True)
+    if grid_tmp and test_drop: next_states[3] = (next_rot, x, y+drop, grid_tmp)
 
     return next_states
 

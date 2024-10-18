@@ -66,6 +66,8 @@ def test_model():
             action = action_space[action_index]
             stop   = stop_action[action_index]
 
+            if action_index == 3:
+                pyboy.tick()
 
             # Execute the action
             if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
