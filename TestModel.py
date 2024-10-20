@@ -1,125 +1,119 @@
 import os
 import numpy as np
+import pandas as pd
+import tensorflow as tf  # Import for loading the trained model
 from pyboy import PyBoy
-from tensorflow.keras.models import load_model
 
-from AccessMemory import get_grid_from_raw_screen, random_pieces, get_pos
+from AccessMemory import get_grid_from_raw_screen, random_pieces, get_pos, get_score
 from Rewards import get_game_reward, is_done
-from Constante import action_space, num_actions, stop_action
-from MemoryAdresse import ROTATION, ACTIVE_TETROMINO_Y
-from CNN import create_cnn
-from Minimax import *
+from Constante import action_space, stop_action
+from MemoryAdresse import ACTIVE_TETROMINO_Y
 
 # Constants
-MODEL_NAME = "Model/model.keras"
 ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = True
-INPUT_SHAPE_GRID = (2, 18, 10)
-FRAMES_PER_ACTION = 1
-TEST_EPISODES = 10  # Number of test episodes
+MODEL_PATH = "Model/tetris_minimax_model.h5"  # Path to the saved trained model
+DEPTH = 18
+
+# Load the trained model
+model = tf.keras.models.load_model(MODEL_PATH)
 
 # Initialize PyBoy (GameBoy emulator)
 pyboy = PyBoy(ROM_PATH, window_type="null" if not SHOW_DISPLAY else "SDL2")
 pyboy.set_emulation_speed(0)  # Normal speed
 
-# Load the trained model
-if os.path.exists(MODEL_NAME):
-    model = load_model(MODEL_NAME)
-    print('Model loaded successfully.')
-else:
-    model = create_cnn(INPUT_SHAPE_GRID, num_actions)
+# Function to reset the game state
+def reset_game_state():
+    with open("State/startstate.state", "rb") as f:
+        pyboy.load_state(f)
 
-model.summary()
+# Function to initialize episode variables
+def initialize_episode():
+    current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
+    previous_grid = current_grid
+    current_x, current_y = get_pos(pyboy)
+    return current_grid, previous_grid, current_x, current_y
 
-# Function to test the model
+# Function to preprocess the grid (state) for model prediction
+def preprocess_grid(grid):
+    # Flatten the grid and reshape it to fit the model's input format
+    if not isinstance(grid, np.ndarray):
+        grid = np.array(grid)
+
+    grid_flat = grid.flatten()
+    return np.expand_dims(grid_flat, axis=0)  # Add a batch dimension for prediction
+
+# Function to perform a step using the model to predict the action
+def perform_model_step(current_grid, previous_grid, current_x, current_y):
+    state = np.stack([previous_grid, current_grid])
+    
+    # Preprocess the current grid for model input
+    processed_grid = preprocess_grid(current_grid)
+
+    # Use the model to predict the next action
+    predictions = model.predict(processed_grid)
+    action_index = np.argmax(predictions)  # Get the action with the highest probability
+    action = action_space[action_index]
+    stop = stop_action[action_index]
+
+    # Execute the action
+    if action_index == 3:
+        pyboy.tick()
+
+    if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
+        pyboy.send_input(action)
+    
+    return action_index, stop
+
+# Function to run a test episode with the trained model
+def run_model_episode():
+    episode_reward = 0
+    total_frames = 0
+    random_piece_count = 0
+    current_grid, previous_grid, current_x, current_y = initialize_episode()
+
+    while not is_done(pyboy):
+        action_index, stop = perform_model_step(
+            current_grid, previous_grid, current_x, current_y
+        )
+        
+        # Update the grid and position after action execution
+        current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
+        previous_grid_test = current_grid_test
+
+        while current_grid_test == previous_grid_test and not is_done(pyboy):
+            pyboy.tick()
+            current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
+
+        previous_grid = current_grid
+        current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
+        current_x, current_y = get_pos(pyboy)
+
+        # Handle piece change
+        if current_y < pyboy.memory[ACTIVE_TETROMINO_Y]:
+            random_pieces(pyboy)
+            random_piece_count += 1
+            
+        # Calculate reward and accumulate for the episode
+        reward = get_game_reward(pyboy, current_grid, 0)
+        episode_reward += reward
+        pyboy.send_input(stop)
+        total_frames += 1
+
+    return get_score(pyboy)
+
+# Main function to run the model and let it play
 def test_model():
     total_rewards = 0
-
+    TEST_EPISODES = 10  # Number of test episodes
     for episode in range(TEST_EPISODES):
-        # Load initial game state
-        with open("State/startstate.state", "rb") as f:
-            pyboy.load_state(f)
-
-        current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
-        previous_grid = current_grid  # Initialize the grid
-
-        done = False
-        episode_reward = 0
-        total_frames = 0
-        frames = 0
-
-        number_of_piece = 0
-
-        current_x, current_y = get_pos(pyboy)
-        last_x, last_y = current_x, current_y
-        reset_off_set = False
-
-        while not done:
-            # Get the current game grid
-            state = np.stack([previous_grid, current_grid])
-
-
-            # Agent chooses an action
-            q_values = model.predict(np.array([state]), verbose=0)  # Predict action using the model
-
-            action_index = np.argmax(q_values[0])  # Select action with the highest Q-value
-            action = action_space[action_index]
-            stop   = stop_action[action_index]
-
-            if action_index == 3:
-                pyboy.tick()
-
-            # Execute the action
-            if pyboy.memory[ACTIVE_TETROMINO_Y] > 32:
-                pyboy.send_input(action)
-        
-            
-            previous_grid = current_grid
-
-            current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
-            previous_grid_test = current_grid_test
-
-            last_frame = total_frames
-            while current_grid_test == previous_grid_test and not is_done(pyboy): 
-                pyboy.tick()
-                current_grid_test = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy, False)
-                frames += 1
-            
-
-            current_grid = get_grid_from_raw_screen(pyboy.screen.ndarray, pyboy)
-            current_x, current_y = get_pos(pyboy)
-
-            pyboy.send_input(stop)
-            
-            if current_y < last_y :
-                random_pieces(pyboy)
-                number_of_piece += 1
-                frames = 0
-
-            last_x, last_y = current_x, current_y
-
-            # Calculate reward and check if game is done
-            rot = pyboy.memory[ROTATION]
-            result = minimax(current_grid, current_x, current_y, rot, 4)
-            reward = get_max_value(result)[0]
-
-            reward = current_y if reward == -999999 else reward
-            
-            if action_index == 2:
-                frames = 0
-            
-            total_frames += 1
-            episode_reward += reward
-
-            done = is_done(pyboy)
-                
-            
-
-        total_rewards += episode_reward
-        print(f"Episode {episode + 1}, Score: {episode_reward/total_frames}")
-
-    # Print the average reward after all test episodes
-    print(f"Average reward after {TEST_EPISODES} test episodes: {total_rewards / TEST_EPISODES}")
+        reset_game_state()
+        episode_score = run_model_episode()
+        total_rewards += episode_score
+        print(f"Episode {episode + 1}, Score: {episode_score}")
+    
+    average_reward = total_rewards / TEST_EPISODES
+    print(f"Average reward after {TEST_EPISODES} test episodes: {average_reward}")
 
 # Run the test
 test_model()

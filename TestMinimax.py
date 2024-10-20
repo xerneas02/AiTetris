@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd  # Ajout de pandas pour gérer les données
 from pyboy import PyBoy
 
 from AccessMemory import get_grid_from_raw_screen, random_pieces, get_pos
@@ -13,6 +14,7 @@ ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = True
 TEST_EPISODES = 10  # Number of test episodes
 DEPTH = 18
+DATA_SAVE_PATH = "data/minimax_data.csv"  # Chemin du fichier pour sauvegarder les données
 
 # Initialize PyBoy (GameBoy emulator)
 pyboy = PyBoy(ROM_PATH, window_type="null" if not SHOW_DISPLAY else "SDL2")
@@ -30,6 +32,20 @@ def initialize_episode():
     current_x, current_y = get_pos(pyboy)
     return current_grid, previous_grid, current_x, current_y
 
+# Function to save state-action pairs
+def save_state_action(state, action):
+    # Vérifie si state est déjà un tableau NumPy
+    if not isinstance(state, np.ndarray):
+        state = np.array(state)  # Conversion en tableau NumPy si nécessaire
+    
+    state_flat = state.flatten()  # Flatten the grid to a 1D array
+    data = list(state_flat) + [action]  # Concatenate state and action
+    
+    # Append the data to the CSV file
+    df = pd.DataFrame([data])
+    df.to_csv(DATA_SAVE_PATH, mode='a', header=not os.path.exists(DATA_SAVE_PATH), index=False)
+
+
 # Function to perform a step in the game
 def perform_game_step(current_grid, previous_grid, current_x, current_y, random_piece_count):
     state = np.stack([previous_grid, current_grid])
@@ -40,6 +56,9 @@ def perform_game_step(current_grid, previous_grid, current_x, current_y, random_
     action_index = get_max_key(result)
     action = action_space[action_index]
     stop = stop_action[action_index]
+
+    # Save the state and the chosen action
+    save_state_action(current_grid, action_index)
 
     # Execute the action
     if action_index == 3:

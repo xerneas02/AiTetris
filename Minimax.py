@@ -45,14 +45,14 @@ def minimax_recursive(grid, x, y, rot, n, hmap_pos):
         next_states[i][3], next_states[i][1], next_states[i][2], next_states[i][0], n - 1, hmap_pos
     ).values()) for i in reorder_list(next_states.keys())}
 
-    # If key 2 does not exist in evaluated states, assign base case evaluation
+    # If input down does not exist in evaluated states, assign base case evaluation because it mean the piece is on the floor
     if 2 not in evaluated_states:
         evaluated_states[2] = [[calculate_evaluation_score(grid, x, y, rot, n)]]
 
     # Return the maximum evaluation for each state
     return {i: max(evaluated_states[i]) for i in evaluated_states.keys()}
 
-# Main minimax function with threads for the first level
+# Main minimax function for first depth
 def minimax(grid, x, y, rot, n):
     if n == 0:
         return base_case(grid, x, y, rot, n)
@@ -68,7 +68,7 @@ def minimax(grid, x, y, rot, n):
         next_states[i][3], next_states[i][1], next_states[i][2], next_states[i][0], n - 1, hmap_pos
     ).values()) for i in reorder_list(next_states.keys())}
 
-    # If key 2 does not exist in evaluated states, assign base case evaluation
+    # If input down does not exist in evaluated states, assign base case evaluation because it mean the piece is on the floor
     if 2 not in evaluated_states:
         evaluated_states[2] = [[calculate_evaluation_score(grid, x, y, rot, n)]]
 
