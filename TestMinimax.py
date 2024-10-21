@@ -12,7 +12,7 @@ from Minimax import *
 # Constants
 ROM_PATH = "Rom/Tetris.gb"
 SHOW_DISPLAY = True
-TEST_EPISODES = 10  # Number of test episodes
+TEST_EPISODES = 1000  # Number of test episodes
 DEPTH = 18
 DATA_SAVE_PATH = "data/minimax_data.csv"  # Chemin du fichier pour sauvegarder les données
 
